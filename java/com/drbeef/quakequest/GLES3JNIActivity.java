@@ -34,6 +34,7 @@ import android.view.KeyEvent;
 
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.widget.Toast;
 
 @SuppressLint("SdCardPath") public class GLES3JNIActivity extends Activity implements SurfaceHolder.Callback
 {
@@ -68,6 +69,8 @@ import android.support.v4.content.ContextCompat;
 
 	String dir;
 
+	private static final int REQUEST_MANAGE_ALL_FILES = 2296;
+
 	@Override protected void onCreate( Bundle icicle )
 	{
 		Log.v( TAG, "----------------------------------------------------------------" );
@@ -100,7 +103,10 @@ import android.support.v4.content.ContextCompat;
 			Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
 			Uri uri = Uri.fromParts("package", getPackageName(), null);
 			intent.setData(uri);
-			startActivityForResult(intent, 1);
+			startActivityForResult(intent, REQUEST_MANAGE_ALL_FILES);
+
+			finishAffinity(); // Cleanly exit
+
 		}
 		else
 		{
@@ -111,7 +117,9 @@ import android.support.v4.content.ContextCompat;
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		create();
+		super.onActivityResult(requestCode, resultCode, data);
+		finishAffinity(); // Cleanly exit
+		System.exit(0);
 	}
 
 	public void create() {
