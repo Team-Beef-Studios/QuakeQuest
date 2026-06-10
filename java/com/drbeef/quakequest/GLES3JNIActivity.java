@@ -51,7 +51,7 @@ import android.widget.Toast;
 
 		try
 		{
-			//System.loadLibrary("openxr_loader");
+			System.loadLibrary("openxr_loader");
 			setenv("OPENXR_HMD", manufacturer, true);
 		} catch (Exception e)
 		{}

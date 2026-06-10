@@ -2,6 +2,7 @@
 #define tbxr_common_h
 
 //OpenXR
+#define XR_NO_PROTOTYPES 1
 #define XR_USE_GRAPHICS_API_OPENGL_ES 1
 #define XR_USE_PLATFORM_ANDROID 1
 #include <EGL/egl.h>
@@ -16,6 +17,7 @@
 #include <android/native_window_jni.h>
 #include <android/log.h>
 
+#include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
 
@@ -178,6 +180,49 @@ typedef union {
 
 #define GL(func) func;
 
+extern PFN_xrGetInstanceProcAddr xrGetInstanceProcAddr;
+extern PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
+extern PFN_xrCreateInstance xrCreateInstance;
+extern PFN_xrResultToString xrResultToString;
+extern PFN_xrGetInstanceProperties xrGetInstanceProperties;
+extern PFN_xrGetSystem xrGetSystem;
+extern PFN_xrGetSystemProperties xrGetSystemProperties;
+extern PFN_xrGetViewConfigurationProperties xrGetViewConfigurationProperties;
+extern PFN_xrEnumerateViewConfigurations xrEnumerateViewConfigurations;
+extern PFN_xrEnumerateViewConfigurationViews xrEnumerateViewConfigurationViews;
+extern PFN_xrCreateSession xrCreateSession;
+extern PFN_xrDestroySession xrDestroySession;
+extern PFN_xrBeginSession xrBeginSession;
+extern PFN_xrEndSession xrEndSession;
+extern PFN_xrPollEvent xrPollEvent;
+extern PFN_xrCreateReferenceSpace xrCreateReferenceSpace;
+extern PFN_xrDestroySpace xrDestroySpace;
+extern PFN_xrEnumerateReferenceSpaces xrEnumerateReferenceSpaces;
+extern PFN_xrGetReferenceSpaceBoundsRect xrGetReferenceSpaceBoundsRect;
+extern PFN_xrLocateSpace xrLocateSpace;
+extern PFN_xrLocateViews xrLocateViews;
+extern PFN_xrCreateSwapchain xrCreateSwapchain;
+extern PFN_xrDestroySwapchain xrDestroySwapchain;
+extern PFN_xrEnumerateSwapchainImages xrEnumerateSwapchainImages;
+extern PFN_xrAcquireSwapchainImage xrAcquireSwapchainImage;
+extern PFN_xrWaitSwapchainImage xrWaitSwapchainImage;
+extern PFN_xrReleaseSwapchainImage xrReleaseSwapchainImage;
+extern PFN_xrWaitFrame xrWaitFrame;
+extern PFN_xrBeginFrame xrBeginFrame;
+extern PFN_xrEndFrame xrEndFrame;
+extern PFN_xrCreateActionSet xrCreateActionSet;
+extern PFN_xrCreateAction xrCreateAction;
+extern PFN_xrStringToPath xrStringToPath;
+extern PFN_xrSuggestInteractionProfileBindings xrSuggestInteractionProfileBindings;
+extern PFN_xrCreateActionSpace xrCreateActionSpace;
+extern PFN_xrAttachSessionActionSets xrAttachSessionActionSets;
+extern PFN_xrSyncActions xrSyncActions;
+extern PFN_xrGetActionStateBoolean xrGetActionStateBoolean;
+extern PFN_xrGetActionStateFloat xrGetActionStateFloat;
+extern PFN_xrGetActionStateVector2f xrGetActionStateVector2f;
+extern PFN_xrApplyHapticFeedback xrApplyHapticFeedback;
+extern PFN_xrStopHapticFeedback xrStopHapticFeedback;
+
 // Forward declarations
 XrInstance TBXR_GetXrInstance();
 
@@ -186,7 +231,11 @@ static void
 OXR_CheckErrors(XrInstance instance, XrResult result, const char* function, bool failOnError) {
     if (XR_FAILED(result)) {
         char errorBuffer[XR_MAX_RESULT_STRING_SIZE];
-        xrResultToString(instance, result, errorBuffer);
+        if (xrResultToString != NULL) {
+            xrResultToString(instance, result, errorBuffer);
+        } else {
+            snprintf(errorBuffer, sizeof(errorBuffer), "%d", result);
+        }
         if (failOnError) {
             ALOGE("OpenXR error: %s: %s\n", function, errorBuffer);
         } else {

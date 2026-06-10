@@ -1,4 +1,6 @@
-Into this folder copy the libopenxr_loader.so for each HMD required to support, suffixed with the headset type:
+OpenXR loader binaries are supplied by the Gradle dependency:
 
-libopenxr_loader_meta.so
-libopenxr_loader_pico.so
+org.khronos.openxr:openxr_loader_for_android
+
+Gradle extracts the generic arm64-v8a loader from that AAR into build/generated/openxr-loader/jniLibs
+before packaging. Do not copy headset-specific libopenxr_loader*.so files into this folder.
