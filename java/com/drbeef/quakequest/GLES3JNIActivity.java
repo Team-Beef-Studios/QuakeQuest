@@ -52,6 +52,11 @@ import android.widget.Toast;
 		try
 		{
 			System.loadLibrary("openxr_loader");
+		} catch (Throwable e)
+		{}
+
+		try
+		{
 			setenv("OPENXR_HMD", manufacturer, true);
 		} catch (Exception e)
 		{}
@@ -68,6 +73,8 @@ import android.widget.Toast;
 
 	String dir;
 
+	private static final int REQUEST_READ_EXTERNAL_STORAGE = 2294;
+	private static final int REQUEST_WRITE_EXTERNAL_STORAGE = 2295;
 	private static final int REQUEST_MANAGE_ALL_FILES = 2296;
 
 	@Override protected void onCreate( Bundle icicle )
@@ -87,7 +94,7 @@ import android.widget.Toast;
 
 	/** Initializes the Activity only if the permission has been granted. */
 	private void checkPermissionsAndInitialize() {
-		if (!Environment.isExternalStorageManager()) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
 			//request for the permission
 			Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
 			Uri uri = Uri.fromParts("package", getPackageName(), null);
@@ -96,6 +103,22 @@ import android.widget.Toast;
 
 			finishAffinity(); // Cleanly exit
 
+		}
+		else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+				ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+						!= PackageManager.PERMISSION_GRANTED) {
+			ActivityCompat.requestPermissions(
+					this,
+					new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE },
+					REQUEST_WRITE_EXTERNAL_STORAGE);
+		}
+		else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R &&
+				ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+						!= PackageManager.PERMISSION_GRANTED) {
+			ActivityCompat.requestPermissions(
+					this,
+					new String[] { Manifest.permission.READ_EXTERNAL_STORAGE },
+					REQUEST_READ_EXTERNAL_STORAGE);
 		}
 		else
 		{
@@ -109,6 +132,17 @@ import android.widget.Toast;
 		super.onActivityResult(requestCode, resultCode, data);
 		finishAffinity(); // Cleanly exit
 		System.exit(0);
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if ((requestCode == REQUEST_READ_EXTERNAL_STORAGE || requestCode == REQUEST_WRITE_EXTERNAL_STORAGE)
+				&& grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			checkPermissionsAndInitialize();
+		} else {
+			System.exit(0);
+		}
 	}
 
 	public void create() {

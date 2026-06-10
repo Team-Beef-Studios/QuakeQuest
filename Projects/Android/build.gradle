@@ -39,7 +39,7 @@ android {
         }
     }
 
-      minSdkVersion 32
+      minSdkVersion 29
       targetSdkVersion 32
   }
 

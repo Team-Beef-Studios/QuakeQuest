@@ -182,6 +182,7 @@ typedef union {
 
 extern PFN_xrGetInstanceProcAddr xrGetInstanceProcAddr;
 extern PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
+extern PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties;
 extern PFN_xrCreateInstance xrCreateInstance;
 extern PFN_xrResultToString xrResultToString;
 extern PFN_xrGetInstanceProperties xrGetInstanceProperties;

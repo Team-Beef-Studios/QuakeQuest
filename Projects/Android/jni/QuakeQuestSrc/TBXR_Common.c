@@ -63,6 +63,7 @@ const char* const requiredExtensionNames_meta[] = {
 		XR_FB_COLOR_SPACE_EXTENSION_NAME};
 
 #define XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME "XR_BD_controller_interaction"
+#define XR_PICO_CONFIGS_EXT_EXTENSION_NAME "XR_PICO_configs_ext"
 
 const char* const requiredExtensionNames_pico[] = {
 		XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
@@ -116,6 +117,7 @@ OpenGLExtensions_t glExtensions;
 
 PFN_xrGetInstanceProcAddr xrGetInstanceProcAddr = NULL;
 PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR = NULL;
+PFN_xrEnumerateInstanceExtensionProperties xrEnumerateInstanceExtensionProperties = NULL;
 PFN_xrCreateInstance xrCreateInstance = NULL;
 PFN_xrResultToString xrResultToString = NULL;
 PFN_xrGetInstanceProperties xrGetInstanceProperties = NULL;
@@ -190,12 +192,32 @@ static void TBXR_LoadOpenXRLoader()
 	}
 
 	LOAD_XR_FUNCTION(XR_NULL_HANDLE, xrCreateInstance);
+	LOAD_XR_FUNCTION(XR_NULL_HANDLE, xrEnumerateInstanceExtensionProperties);
 
 	XrResult result = xrGetInstanceProcAddr(
 			XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR);
 	if (XR_FAILED(result)) {
 		xrInitializeLoaderKHR = NULL;
 	}
+}
+
+static bool TBXR_AddExtensionIfAvailable(
+		const XrExtensionProperties* availableExtensions,
+		uint32_t availableExtensionCount,
+		const char* extensionName,
+		const char** enabledExtensions,
+		uint32_t* enabledExtensionCount)
+{
+	for (uint32_t i = 0; i < availableExtensionCount; ++i) {
+		if (strcmp(availableExtensions[i].extensionName, extensionName) == 0) {
+			enabledExtensions[(*enabledExtensionCount)++] = extensionName;
+			ALOGV("Enabling OpenXR extension: %s", extensionName);
+			return true;
+		}
+	}
+
+	ALOGV("OpenXR extension not available: %s", extensionName);
+	return false;
 }
 
 static void TBXR_LoadOpenXRInstanceFunctions(XrInstance instance)
@@ -1655,19 +1677,77 @@ void TBXR_InitialiseOpenXR()
 	instanceCreateInfo.enabledApiLayerCount = 0;
 	instanceCreateInfo.enabledApiLayerNames = NULL;
 
-    if (strstr(gAppState.OpenXRHMD, "meta") != NULL)
-    {
-        instanceCreateInfo.enabledExtensionCount = numRequiredExtensions_meta;
-        instanceCreateInfo.enabledExtensionNames = requiredExtensionNames_meta;
-    }
-    else
-    {
-        instanceCreateInfo.enabledExtensionCount = numRequiredExtensions_pico;
-        instanceCreateInfo.enabledExtensionNames = requiredExtensionNames_pico;
-    }
+	uint32_t availableExtensionCount = 0;
+	OXR(xrEnumerateInstanceExtensionProperties(NULL, 0, &availableExtensionCount, NULL));
+	XrExtensionProperties* availableExtensions =
+			(XrExtensionProperties*)calloc(availableExtensionCount, sizeof(XrExtensionProperties));
+	for (uint32_t i = 0; i < availableExtensionCount; ++i) {
+		availableExtensions[i].type = XR_TYPE_EXTENSION_PROPERTIES;
+	}
+	OXR(xrEnumerateInstanceExtensionProperties(
+			NULL, availableExtensionCount, &availableExtensionCount, availableExtensions));
+
+	const char* enabledExtensions[16];
+	uint32_t enabledExtensionCount = 0;
+	TBXR_AddExtensionIfAvailable(
+			availableExtensions,
+			availableExtensionCount,
+			XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
+			enabledExtensions,
+			&enabledExtensionCount);
+	TBXR_AddExtensionIfAvailable(
+			availableExtensions,
+			availableExtensionCount,
+			XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
+			enabledExtensions,
+			&enabledExtensionCount);
+	TBXR_AddExtensionIfAvailable(
+			availableExtensions,
+			availableExtensionCount,
+			XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME,
+			enabledExtensions,
+			&enabledExtensionCount);
+
+	bool picoRuntime = TBXR_AddExtensionIfAvailable(
+			availableExtensions,
+			availableExtensionCount,
+			XR_PICO_CONFIGS_EXT_EXTENSION_NAME,
+			enabledExtensions,
+			&enabledExtensionCount);
+	TBXR_AddExtensionIfAvailable(
+			availableExtensions,
+			availableExtensionCount,
+			XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME,
+			enabledExtensions,
+			&enabledExtensionCount);
+
+	if (!picoRuntime) {
+		TBXR_AddExtensionIfAvailable(
+				availableExtensions,
+				availableExtensionCount,
+				XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME,
+				enabledExtensions,
+				&enabledExtensionCount);
+		TBXR_AddExtensionIfAvailable(
+				availableExtensions,
+				availableExtensionCount,
+				XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME,
+				enabledExtensions,
+				&enabledExtensionCount);
+		TBXR_AddExtensionIfAvailable(
+				availableExtensions,
+				availableExtensionCount,
+				XR_FB_COLOR_SPACE_EXTENSION_NAME,
+				enabledExtensions,
+				&enabledExtensionCount);
+	}
+
+	instanceCreateInfo.enabledExtensionCount = enabledExtensionCount;
+	instanceCreateInfo.enabledExtensionNames = enabledExtensions;
 
 	XrResult initResult;
 	initResult = xrCreateInstance(&instanceCreateInfo, &gAppState.Instance);
+	free(availableExtensions);
 	if (initResult != XR_SUCCESS) {
 		ALOGE("Failed to create XR instance: %d.", initResult);
 		exit(1);
@@ -1684,6 +1764,16 @@ void TBXR_InitialiseOpenXR()
 			XR_VERSION_MAJOR(instanceInfo.runtimeVersion),
 			XR_VERSION_MINOR(instanceInfo.runtimeVersion),
 			XR_VERSION_PATCH(instanceInfo.runtimeVersion));
+
+	if (strstr(instanceInfo.runtimeName, "PICO") != NULL ||
+			strstr(instanceInfo.runtimeName, "Pico") != NULL ||
+			strstr(instanceInfo.runtimeName, "pico") != NULL) {
+		gAppState.OpenXRHMD = "pico";
+	} else if (strstr(instanceInfo.runtimeName, "Oculus") != NULL ||
+			strstr(instanceInfo.runtimeName, "Meta") != NULL ||
+			strstr(instanceInfo.runtimeName, "meta") != NULL) {
+		gAppState.OpenXRHMD = "meta";
+	}
 
 	XrSystemGetInfo systemGetInfo;
 	memset(&systemGetInfo, 0, sizeof(systemGetInfo));

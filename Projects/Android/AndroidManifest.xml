@@ -37,6 +37,7 @@
 		android:allowBackup="false"
 		android:icon="@drawable/ic_qquest"
 		android:label="@string/quakequest"
+		android:requestLegacyExternalStorage="true"
 		android:extractNativeLibs="true">
 
 		<!-- META QUEST -->
@@ -66,6 +67,7 @@
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
 				<category android:name="com.oculus.intent.category.VR" />
+				<category android:name="com.picovr.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
 	</application>
