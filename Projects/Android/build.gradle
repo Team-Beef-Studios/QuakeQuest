@@ -125,9 +125,6 @@ android {
         disable 'ExpiredTargetSdkVersion'
     }
 
-    packagingOptions {
-        exclude 'lib/arm64-v8a/libopenxr_loader.so'
-    }
     compileSdkVersion = 32
 
     buildToolsVersion = '29.0.3'
@@ -135,20 +132,16 @@ android {
     ndkVersion '25.1.8937393'
 }
 
+repositories {
+    google() // For Gradle 4.0+
+    mavenCentral()
+}
+
 dependencies {
     implementation "com.android.support:support-compat:28.0.0"
     implementation "com.android.support:support-core-utils:28.0.0"
+    implementation "org.khronos.openxr:openxr_loader_for_android:1.1.36"
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
-}
-
-repositories {
-    google()
-}
-
-buildscript {
-    repositories {
-        google()
-    }
 }
 
 // Workaround to fix issue in Android Studio Chipmunk 2021.2.1 and later

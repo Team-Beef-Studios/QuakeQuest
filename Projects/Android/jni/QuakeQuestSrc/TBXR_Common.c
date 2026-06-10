@@ -61,63 +61,13 @@ const char* const requiredExtensionNames_meta[] = {
 		XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME,
 		XR_FB_COLOR_SPACE_EXTENSION_NAME};
 
-#define XR_PICO_CONFIGS_EXT_EXTENSION_NAME "XR_PICO_configs_ext"
-
-enum ConfigsEXT
-{
-    RENDER_TEXTURE_WIDTH = 0,
-    RENDER_TEXTURE_HEIGHT,
-    SHOW_FPS,
-    RUNTIME_LOG_LEVEL,
-    PXRPLUGIN_LOG_LEVEL,
-    UNITY_LOG_LEVEL,
-    UNREAL_LOG_LEVEL,
-    NATIVE_LOG_LEVEL,
-    TARGET_FRAME_RATE,
-    NECK_MODEL_X,
-    NECK_MODEL_Y,
-    NECK_MODEL_Z,
-    DISPLAY_REFRESH_RATE,
-    ENABLE_6DOF,
-    CONTROLLER_TYPE,
-    PHYSICAL_IPD,
-    TO_DELTA_SENSOR_Y,
-    GET_DISPLAY_RATE,
-    FOVEATION_SUBSAMPLED_ENABLED = 18,
-    TRACKING_ORIGIN_HEIGHT
-};
-typedef XrResult (XRAPI_PTR *PFN_xrGetConfigPICO)(
-        XrSession                              session,
-        enum ConfigsEXT                        configIndex,
-        float *                                configData);
-PFN_xrGetConfigPICO    pfnXrGetConfigPICO;
-
-
-enum ConfigsSetEXT
-{
-	UNREAL_VERSION = 0,
-	TRACKING_ORIGIN,
-	OPENGL_NOERROR,
-	ENABLE_SIX_DOF,
-	PRESENTATION_FLAG,
-	ENABLE_CPT,
-	PLATFORM,
-	FOVEATION_LEVEL,
-	SET_DISPLAY_RATE = 8,
-	MRC_TEXTURE_ID = 9,
-};
-
-typedef XrResult (XRAPI_PTR *PFN_xrSetConfigPICO) (
-		XrSession                             session,
-		enum ConfigsSetEXT                    configIndex,
-		char *                                configData);
-PFN_xrSetConfigPICO    pfnXrSetConfigPICO;
+#define XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME "XR_BD_controller_interaction"
 
 const char* const requiredExtensionNames_pico[] = {
 		XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME,
 		XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME,
 		XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME,
-		XR_PICO_CONFIGS_EXT_EXTENSION_NAME};
+        XR_BD_CONTROLLER_INTERACTION_EXTENSION_NAME};
 
 
 const uint32_t numRequiredExtensions_meta =
@@ -1517,17 +1467,6 @@ void TBXR_InitRenderer(  ) {
 		memset(&gAppState.Projections[eye], 0, sizeof(XrView));
         gAppState.Projections[eye].type = XR_TYPE_VIEW;
 	}
-
-    if (strstr(gAppState.OpenXRHMD, "pico") != NULL)
-    {
-        xrGetInstanceProcAddr(gAppState.Instance,"xrSetConfigPICO", (PFN_xrVoidFunction*)(&pfnXrSetConfigPICO));
-        xrGetInstanceProcAddr(gAppState.Instance,"xrGetConfigPICO", (PFN_xrVoidFunction*)(&pfnXrGetConfigPICO));
-
-        pfnXrSetConfigPICO(gAppState.Session,TRACKING_ORIGIN,"0");
-        pfnXrSetConfigPICO(gAppState.Session,TRACKING_ORIGIN,"1");
-
-        pfnXrGetConfigPICO(gAppState.Session, GET_DISPLAY_RATE, &gAppState.currentDisplayRefreshRate);
-    }
 
 	ovrRenderer_Create(
 			gAppState.Session,

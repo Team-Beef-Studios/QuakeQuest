@@ -51,8 +51,7 @@ import android.widget.Toast;
 
 		try
 		{
-			//Load manufacturer specific loader
-			System.loadLibrary("openxr_loader_" + manufacturer);
+			//System.loadLibrary("openxr_loader");
 			setenv("OPENXR_HMD", manufacturer, true);
 		} catch (Exception e)
 		{}
@@ -82,16 +81,6 @@ import android.widget.Toast;
 		mView.getHolder().addCallback( this );
 
 		dir = "/sdcard/QuakeQuest";
-		//dir = getBaseContext().getExternalFilesDir(null).getAbsolutePath();
-
-		// Force the screen to stay on, rather than letting it dim and shut off
-		// while the user is watching a movie.
-		getWindow().addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON );
-
-		// Force screen brightness to stay at maximum
-		WindowManager.LayoutParams params = getWindow().getAttributes();
-		params.screenBrightness = 1.0f;
-		getWindow().setAttributes( params );
 
 		checkPermissionsAndInitialize();
 	}
@@ -212,7 +201,9 @@ import android.widget.Toast;
 		Log.v( TAG, "GLES3JNIActivity::onStart()" );
 		super.onStart();
 
-		GLES3JNILib.onStart( mNativeHandle, this );
+		if (mNativeHandle != 0) {
+			GLES3JNILib.onStart(mNativeHandle, this);
+		}
 	}
 
 	@Override protected void onResume()
@@ -220,20 +211,26 @@ import android.widget.Toast;
 		Log.v( TAG, "GLES3JNIActivity::onResume()" );
 		super.onResume();
 
-		GLES3JNILib.onResume( mNativeHandle );
+		if (mNativeHandle != 0) {
+			GLES3JNILib.onResume(mNativeHandle);
+		}
 	}
 
 	@Override protected void onPause()
 	{
 		Log.v( TAG, "GLES3JNIActivity::onPause()" );
-		GLES3JNILib.onPause( mNativeHandle );
+		if (mNativeHandle != 0) {
+			GLES3JNILib.onPause(mNativeHandle);
+		}
 		super.onPause();
 	}
 
 	@Override protected void onStop()
 	{
 		Log.v( TAG, "GLES3JNIActivity::onStop()" );
-		GLES3JNILib.onStop( mNativeHandle );
+		if (mNativeHandle != 0) {
+			GLES3JNILib.onStop(mNativeHandle);
+		}
 		super.onStop();
 	}
 
@@ -241,12 +238,14 @@ import android.widget.Toast;
 	{
 		Log.v( TAG, "GLES3JNIActivity::onDestroy()" );
 
-		if ( mSurfaceHolder != null )
+		if ( mSurfaceHolder != null && mNativeHandle != 0)
 		{
 			GLES3JNILib.onSurfaceDestroyed( mNativeHandle );
 		}
 
-		GLES3JNILib.onDestroy( mNativeHandle );
+		if (mNativeHandle != 0) {
+			GLES3JNILib.onDestroy(mNativeHandle);
+		}
 
 		super.onDestroy();
 		mNativeHandle = 0;
